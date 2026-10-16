@@ -1,0 +1,40 @@
+# Compiled binaries and build artifacts
+*.hex
+*.bin
+*.elf
+*.o
+*.d
+*.obj
+build/
+.pio/
+.pioenvs/
+.piolibdeps/
+
+# Arduino IDE temporary build and cache folders
+/tmp/
+*.cache
+
+# IDE and Editor configurations
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Operating System files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+*.swp
+*~
+
+# CAD / 3D Printing temporary / backup files
+*.bak
+*.tmp
+*.log
+*.step.bak
+*.stp.bak
+*.stl.bak
