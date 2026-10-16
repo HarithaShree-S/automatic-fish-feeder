@@ -1,51 +1,51 @@
-/*
- * Project: ESP32 Automatic Fish Feeder
- * Module: 03_NTP_Time_Test
- * Description: Connects to Wi-Fi and synchronizes current time using NTP.
- */
-
 #include <WiFi.h>
-#include <time.h>
+#include "time.h"
 
-// Wi-Fi Credentials
-const char* ssid     = "YOUR_WIFI_SSID";
-const char* password = "YOUR_WIFI_PASSWORD";
+// Replace with your local Wi-Fi credentials
+const char* ssid     = "SAINTGITS";
+const char* password = "saintgitswifi";
 
 // NTP Server settings
 const char* ntpServer = "pool.ntp.org";
-const long  gmtOffset_sec = 19800;    // Example: UTC+5:30 (India Standard Time = 5.5 * 3600 = 19800)
-const int   daylightOffset_sec = 0;   // Set to 3600 if Daylight Saving applies
+const long  gmtOffset_sec = 19800; // India Standard Time (IST) offset: +5:30 = 19800 seconds
+const int   daylightOffset_sec = 0;
 
 void printLocalTime() {
   struct tm timeinfo;
-  if (!getLocalTime(&timeinfo)) {
-    Serial.println("Failed to obtain time from NTP server");
+  if(!getLocalTime(&timeinfo)){
+    Serial.println("[ERROR] Failed to obtain time from NTP server");
     return;
   }
-  Serial.println(&timeinfo, "Current Time: %Y-%m-%d %H:%M:%S (%A)");
+  // Print formatted time: HH:MM:SS
+  Serial.println(&timeinfo, "[NTP TIME] %A, %B %d %Y %H:%M:%S");
 }
 
 void setup() {
   Serial.begin(115200);
   delay(1000);
-  Serial.println("[ESP32 Fish Feeder] Step 03: NTP Time Test Started");
 
-  // Connect to Wi-Fi
-  Serial.printf("Connecting to %s ", ssid);
+  Serial.println("=========================================");
+  Serial.println(" ESP32 Fish Feeder: 03_NTP_Time_Test     ");
+  Serial.println("=========================================");
+
+  // Connect to Wi-Fi network
+  Serial.print("Connecting to Wi-Fi: ");
+  Serial.println(ssid);
   WiFi.begin(ssid, password);
+
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   }
-  Serial.println("\nWiFi connected. IP address: ");
+  Serial.println("\n[STATUS] Wi-Fi Connected Successfully!");
+  Serial.print("[STATUS] IP Address: ");
   Serial.println(WiFi.localIP());
 
-  // Init and get time
+  // Initialize NTP time sync
   configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
-  printLocalTime();
 }
 
 void loop() {
-  delay(5000);
   printLocalTime();
+  delay(5000); // Check and print time every 5 seconds
 }
