@@ -1,13 +1,19 @@
 #include <WiFi.h>
 #include "time.h"
 
-// Replace with your local Wi-Fi credentials
-const char* ssid     = "SAINTGITS";
-const char* password = "saintgitswifi";
+// Wi-Fi credentials loaded from gitignored config.h (see config.example.h)
+#if __has_include("config.h")
+  #include "config.h"
+#else
+  #include "config.example.h"
+#endif
 
-// NTP Server settings
+const char* ssid     = WIFI_SSID;
+const char* password = WIFI_PASSWORD;
+
+// NTP Server settings (Configured for India Standard Time +5:30)
 const char* ntpServer = "pool.ntp.org";
-const long  gmtOffset_sec = 19800; // India Standard Time (IST) offset: +5:30 = 19800 seconds
+const long  gmtOffset_sec = 19800; // +5 hours 30 mins = 19800 seconds
 const int   daylightOffset_sec = 0;
 
 void printLocalTime() {
@@ -16,7 +22,7 @@ void printLocalTime() {
     Serial.println("[ERROR] Failed to obtain time from NTP server");
     return;
   }
-  // Print formatted time: HH:MM:SS
+  // Format and print: Day, Month Date Year HH:MM:SS
   Serial.println(&timeinfo, "[NTP TIME] %A, %B %d %Y %H:%M:%S");
 }
 
@@ -28,7 +34,7 @@ void setup() {
   Serial.println(" ESP32 Fish Feeder: 03_NTP_Time_Test     ");
   Serial.println("=========================================");
 
-  // Connect to Wi-Fi network
+  // Connect to phone hotspot
   Serial.print("Connecting to Wi-Fi: ");
   Serial.println(ssid);
   WiFi.begin(ssid, password);
@@ -41,11 +47,11 @@ void setup() {
   Serial.print("[STATUS] IP Address: ");
   Serial.println(WiFi.localIP());
 
-  // Initialize NTP time sync
+  // Synchronize time from NTP server
   configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
 }
 
 void loop() {
   printLocalTime();
-  delay(5000); // Check and print time every 5 seconds
+  delay(5000); // Fetch and display live time every 5 seconds
 }

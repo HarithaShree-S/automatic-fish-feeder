@@ -38,3 +38,7 @@ $RECYCLE.BIN/
 *.step.bak
 *.stp.bak
 *.stl.bak
+
+# Sensitive configurations and credentials
+config.h
+
