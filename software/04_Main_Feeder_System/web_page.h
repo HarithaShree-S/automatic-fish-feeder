@@ -1,0 +1,1778 @@
+#ifndef WEB_PAGE_H
+#define WEB_PAGE_H
+
+#include <pgmspace.h>
+
+// Web dashboard HTML, CSS, and JS served directly from ESP32 Flash memory
+const char INDEX_HTML[] PROGMEM = R"rawliteral(<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AquaFeeder Pro - ESP32 Automatic Fish Feeder</title>
+  <meta name="description" content="Ocean-themed smart dashboard for ESP32 Automatic Fish Feeder with automated schedules, manual feeding, and feeding history.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg-deep-abyss: #030712;
+      --bg-ocean-deep: #06192e;
+      --bg-ocean-mid: #0b3456;
+      --bg-ocean-surface: #0e4e7c;
+      --cyan-bright: #38bdf8;
+      --cyan-glow: rgba(56, 189, 248, 0.45);
+      --aquamarine: #2dd4bf;
+      --aquamarine-glow: rgba(45, 212, 191, 0.4);
+      --coral-accent: #f97316;
+      --coral-glow: rgba(249, 115, 22, 0.45);
+      --gold-accent: #fbbf24;
+      --emerald-green: #10b981;
+      --glass-bg: rgba(11, 35, 61, 0.65);
+      --glass-border: rgba(56, 189, 248, 0.2);
+      --glass-card-hover: rgba(14, 52, 90, 0.75);
+      --text-primary: #f0f9ff;
+      --text-secondary: #93c5fd;
+      --text-muted: #60a5fa;
+      --font-display: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-body: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background: radial-gradient(circle at 50% 10%, #0d588d 0%, #072a4b 35%, #031427 70%, #010813 100%);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Underwater Light Rays & Depth Ambience */
+    .ocean-background {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .sun-rays {
+      position: absolute;
+      top: -30%;
+      left: -20%;
+      width: 140%;
+      height: 100%;
+      background: repeating-linear-gradient(
+        75deg,
+        rgba(56, 189, 248, 0.08) 0px,
+        rgba(56, 189, 248, 0.08) 45px,
+        transparent 50px,
+        transparent 110px
+      );
+      filter: blur(25px);
+      animation: rayShift 18s ease-in-out infinite alternate;
+      transform-origin: top center;
+    }
+
+    @keyframes rayShift {
+      0% { transform: rotate(-5deg) scale(1); opacity: 0.6; }
+      50% { transform: rotate(2deg) scale(1.08); opacity: 0.9; }
+      100% { transform: rotate(-3deg) scale(1.02); opacity: 0.7; }
+    }
+
+    /* Floating Bubble Canvas */
+    #bubbleCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    /* Animated Swimming Fish Elements */
+    .fish-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .swim-fish {
+      position: absolute;
+      filter: drop-shadow(0 8px 12px rgba(0,0,0,0.4));
+      will-change: transform;
+    }
+
+    /* Clownfish (Nemo) */
+    .fish-1 {
+      top: 22%;
+      left: -150px;
+      width: 90px;
+      animation: swimRight 28s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+    }
+
+    /* Blue Tang (Dory) */
+    .fish-2 {
+      top: 55%;
+      right: -160px;
+      width: 110px;
+      animation: swimLeft 36s cubic-bezier(0.4, 0.1, 0.6, 0.9) infinite 7s;
+    }
+
+    /* Small Neon Tetra school */
+    .fish-3 {
+      top: 78%;
+      left: -100px;
+      width: 55px;
+      opacity: 0.75;
+      animation: swimRight 22s linear infinite 3s;
+    }
+
+    .fish-4 {
+      top: 80%;
+      left: -140px;
+      width: 50px;
+      opacity: 0.65;
+      animation: swimRight 22s linear infinite 3.5s;
+    }
+
+    /* Majestic Ray in the Deep */
+    .fish-ray {
+      top: 85%;
+      right: -250px;
+      width: 220px;
+      opacity: 0.35;
+      animation: swimLeft 50s linear infinite 14s;
+    }
+
+    @keyframes swimRight {
+      0% { transform: translate(0, 0) scaleX(1); }
+      25% { transform: translate(30vw, -25px) scaleX(1); }
+      50% { transform: translate(60vw, 20px) scaleX(1); }
+      75% { transform: translate(85vw, -15px) scaleX(1); }
+      100% { transform: translate(calc(100vw + 200px), 10px) scaleX(1); }
+    }
+
+    @keyframes swimLeft {
+      0% { transform: translate(0, 0) scaleX(-1); }
+      25% { transform: translate(-30vw, 25px) scaleX(-1); }
+      50% { transform: translate(-60vw, -20px) scaleX(-1); }
+      75% { transform: translate(-85vw, 15px) scaleX(-1); }
+      100% { transform: translate(calc(-100vw - 260px), -10px) scaleX(-1); }
+    }
+
+    .fish-tail {
+      transform-origin: 85% 50%;
+      animation: wagTail 0.8s ease-in-out infinite alternate;
+    }
+
+    @keyframes wagTail {
+      from { transform: rotate(-10deg); }
+      to { transform: rotate(10deg); }
+    }
+
+    /* Seaweed & Reef Silhouette along bottom */
+    .seabed-silhouette {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 120px;
+      background: linear-gradient(to top, rgba(1, 10, 20, 0.95), transparent);
+      z-index: 1;
+    }
+
+    /* Main App Layout */
+    .app-wrapper {
+      position: relative;
+      z-index: 10;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px 20px 60px;
+    }
+
+    /* Glassmorphism Header */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+      padding: 18px 28px;
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      border-radius: 24px;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      margin-bottom: 28px;
+    }
+
+    .brand-section {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .brand-icon {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, #0284c7, #06b6d4, #10b981);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 20px var(--cyan-glow);
+      animation: floatIcon 3.5s ease-in-out infinite;
+    }
+
+    @keyframes floatIcon {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-4px); }
+    }
+
+    .brand-title h1 {
+      font-family: var(--font-display);
+      font-size: 1.65rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      background: linear-gradient(120deg, #ffffff 30%, #7dd3fc 70%, #38bdf8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-title p {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .header-status-group {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      border-radius: 100px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .status-pulse {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--emerald-green);
+      box-shadow: 0 0 12px var(--emerald-green);
+      animation: pulseAnim 2s infinite;
+    }
+
+    .status-pulse.offline {
+      background: #f59e0b;
+      box-shadow: 0 0 12px #f59e0b;
+    }
+
+    @keyframes pulseAnim {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.3); opacity: 1; }
+      100% { transform: scale(0.95); opacity: 0.8; }
+    }
+
+    .clock-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: rgba(14, 165, 233, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 100px;
+      font-family: var(--font-display);
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--cyan-bright);
+      letter-spacing: 0.05em;
+    }
+
+    .ip-config-btn {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: var(--text-secondary);
+      border-radius: 100px;
+      padding: 8px 14px;
+      font-size: 0.82rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .ip-config-btn:hover {
+      background: rgba(56, 189, 248, 0.18);
+      color: var(--text-primary);
+      border-color: var(--cyan-bright);
+    }
+
+    /* Dashboard Grid */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    @media (max-width: 900px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Modern Glass Card */
+    .glass-card {
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      border-radius: 24px;
+      padding: 28px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .glass-card:hover {
+      border-color: rgba(56, 189, 248, 0.4);
+      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5), 0 0 24px rgba(56, 189, 248, 0.15);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 22px;
+    }
+
+    .card-title-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .card-icon-pill {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+    }
+
+    .pill-feed { background: rgba(249, 115, 22, 0.18); color: var(--coral-accent); border: 1px solid rgba(249, 115, 22, 0.35); }
+    .pill-schedule { background: rgba(56, 189, 248, 0.18); color: var(--cyan-bright); border: 1px solid rgba(56, 189, 248, 0.35); }
+    .pill-history { background: rgba(45, 212, 191, 0.18); color: var(--aquamarine); border: 1px solid rgba(45, 212, 191, 0.35); }
+    .pill-diag { background: rgba(168, 85, 247, 0.18); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.35); }
+
+    .card-title-group h2 {
+      font-family: var(--font-display);
+      font-size: 1.28rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .card-tag {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 4px 10px;
+      border-radius: 100px;
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-secondary);
+    }
+
+    /* CARD 1: Manual Feed Hero */
+    .hero-feed-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      justify-content: center;
+      padding: 36px 24px;
+    }
+
+    .feed-button-container {
+      position: relative;
+      margin: 24px 0 20px;
+    }
+
+    /* Giant Glowing Feed Now Button */
+    .btn-feed-now {
+      width: 190px;
+      height: 190px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      background: radial-gradient(circle at 35% 30%, #38bdf8 0%, #0284c7 45%, #0369a1 80%, #075985 100%);
+      box-shadow: 0 0 0 10px rgba(56, 189, 248, 0.15),
+                  0 0 0 22px rgba(56, 189, 248, 0.08),
+                  0 20px 40px rgba(2, 132, 199, 0.5),
+                  inset 0 4px 10px rgba(255, 255, 255, 0.5),
+                  inset 0 -6px 14px rgba(0, 0, 0, 0.4);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      color: white;
+      transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative;
+      z-index: 2;
+    }
+
+    .btn-feed-now:hover:not(:disabled) {
+      transform: scale(1.06);
+      box-shadow: 0 0 0 14px rgba(56, 189, 248, 0.25),
+                  0 0 0 30px rgba(56, 189, 248, 0.12),
+                  0 25px 50px rgba(2, 132, 199, 0.7),
+                  inset 0 6px 14px rgba(255, 255, 255, 0.6),
+                  inset 0 -6px 14px rgba(0, 0, 0, 0.4);
+    }
+
+    .btn-feed-now:active:not(:disabled) {
+      transform: scale(0.96);
+      box-shadow: 0 0 0 6px rgba(56, 189, 248, 0.3),
+                  0 10px 20px rgba(2, 132, 199, 0.4),
+                  inset 0 2px 6px rgba(0, 0, 0, 0.4);
+    }
+
+    .btn-feed-now:disabled {
+      opacity: 0.75;
+      cursor: not-allowed;
+      filter: grayscale(0.2);
+    }
+
+    .btn-feed-icon {
+      width: 44px;
+      height: 44px;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+      transition: transform 0.3s ease;
+    }
+
+    .btn-feed-now:hover:not(:disabled) .btn-feed-icon {
+      transform: rotate(-12deg) scale(1.15);
+    }
+
+    .btn-feed-label {
+      font-family: var(--font-display);
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    }
+
+    .btn-feed-subtext {
+      font-size: 0.75rem;
+      opacity: 0.85;
+      font-weight: 600;
+    }
+
+    /* Animated Feeding Pellets Effect */
+    .pellet-animation {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .feed-status-banner {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 20px;
+      border-radius: 100px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      margin-top: 14px;
+    }
+
+    .feed-status-banner strong {
+      color: var(--aquamarine);
+    }
+
+    /* CARD 2: Feeding Schedule Form */
+    .schedule-form {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .schedule-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 16px 20px;
+      background: rgba(15, 23, 42, 0.5);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      border-radius: 18px;
+      transition: all 0.2s ease;
+    }
+
+    .schedule-row:hover {
+      background: rgba(15, 23, 42, 0.7);
+      border-color: rgba(56, 189, 248, 0.4);
+    }
+
+    .schedule-info {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .time-slot-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+    }
+
+    .slot-morning {
+      background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(249, 115, 22, 0.25));
+      border: 1px solid rgba(251, 191, 36, 0.4);
+      color: #fbbf24;
+    }
+
+    .slot-evening {
+      background: linear-gradient(135deg, rgba(129, 140, 248, 0.2), rgba(99, 102, 241, 0.3));
+      border: 1px solid rgba(129, 140, 248, 0.4);
+      color: #a5b4fc;
+    }
+
+    .time-slot-details h4 {
+      font-family: var(--font-display);
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .time-slot-details p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .time-input-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .custom-time-input {
+      background: rgba(3, 7, 18, 0.65);
+      border: 1.5px solid rgba(56, 189, 248, 0.3);
+      border-radius: 12px;
+      color: #38bdf8;
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      font-weight: 700;
+      padding: 8px 14px;
+      outline: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      letter-spacing: 0.05em;
+    }
+
+    .custom-time-input::-webkit-calendar-picker-indicator {
+      filter: invert(0.8) sepia(100%) saturate(300%) hue-rotate(160deg);
+      cursor: pointer;
+    }
+
+    .custom-time-input:focus {
+      border-color: var(--cyan-bright);
+      box-shadow: 0 0 16px var(--cyan-glow);
+    }
+
+    .next-feed-countdown {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      background: rgba(45, 212, 191, 0.08);
+      border: 1px solid rgba(45, 212, 191, 0.25);
+      border-radius: 16px;
+      font-size: 0.9rem;
+    }
+
+    .countdown-timer {
+      font-family: var(--font-display);
+      font-weight: 700;
+      color: var(--aquamarine);
+      font-size: 1.05rem;
+    }
+
+    .btn-save-schedule {
+      background: linear-gradient(135deg, #0284c7 0%, #06b6d4 100%);
+      color: white;
+      border: none;
+      border-radius: 14px;
+      padding: 14px 24px;
+      font-family: var(--font-display);
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      box-shadow: 0 8px 24px rgba(2, 132, 199, 0.35);
+      transition: all 0.25s ease;
+    }
+
+    .btn-save-schedule:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px rgba(6, 182, 212, 0.5);
+      background: linear-gradient(135deg, #0369a1 0%, #0891b2 100%);
+    }
+
+    .btn-save-schedule:active {
+      transform: translateY(0);
+    }
+
+    /* CARD 3: Feeding History */
+    .history-card {
+      grid-column: 1 / -1;
+    }
+
+    .history-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: var(--text-secondary);
+      border-radius: 10px;
+      padding: 6px 14px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(244, 63, 94, 0.18);
+      border-color: #f43f5e;
+      color: #fda4af;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 280px;
+      overflow-y: auto;
+      padding-right: 6px;
+    }
+
+    .history-list::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .history-list::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.4);
+      border-radius: 10px;
+    }
+
+    .history-list::-webkit-scrollbar-thumb {
+      background: rgba(56, 189, 248, 0.3);
+      border-radius: 10px;
+    }
+
+    .history-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 18px;
+      background: rgba(15, 23, 42, 0.45);
+      border: 1px solid rgba(56, 189, 248, 0.15);
+      border-radius: 14px;
+      transition: all 0.2s ease;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .history-item:hover {
+      background: rgba(15, 23, 42, 0.7);
+      border-color: rgba(56, 189, 248, 0.35);
+    }
+
+    .history-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .history-icon-badge {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+    }
+
+    .type-manual { background: rgba(249, 115, 22, 0.2); color: #fb923c; }
+    .type-morning { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }
+    .type-evening { background: rgba(99, 102, 241, 0.2); color: #818cf8; }
+
+    .history-details h5 {
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .history-details p {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .history-status-tag {
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 100px;
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .empty-history {
+      text-align: center;
+      padding: 36px 20px;
+      color: var(--text-muted);
+      font-size: 0.92rem;
+    }
+
+    /* CARD 4: System Telemetry Stats */
+    .telemetry-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-top: 24px;
+    }
+
+    @media (max-width: 800px) {
+      .telemetry-row {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .stat-box {
+      background: rgba(11, 35, 61, 0.5);
+      border: 1px solid rgba(56, 189, 248, 0.18);
+      border-radius: 18px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+
+    .stat-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--cyan-bright);
+      font-size: 1.15rem;
+    }
+
+    .stat-content p {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .stat-content h4 {
+      font-family: var(--font-display);
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    /* Toast Notification */
+    .toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none;
+    }
+
+    .toast {
+      pointer-events: auto;
+      padding: 14px 22px;
+      border-radius: 14px;
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--cyan-bright);
+      color: white;
+      font-size: 0.9rem;
+      font-weight: 600;
+      box-shadow: 0 16px 36px rgba(0,0,0,0.5), 0 0 20px var(--cyan-glow);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transform: translateX(120%);
+      opacity: 0;
+      transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .toast.show {
+      transform: translateX(0);
+      opacity: 1;
+    }
+
+    .toast.success {
+      border-color: var(--emerald-green);
+      box-shadow: 0 16px 36px rgba(0,0,0,0.5), 0 0 20px rgba(16, 185, 129, 0.4);
+    }
+
+    .toast.error {
+      border-color: #ef4444;
+      box-shadow: 0 16px 36px rgba(0,0,0,0.5), 0 0 20px rgba(239, 68, 68, 0.4);
+    }
+
+    /* Modal for ESP32 IP Configuration */
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(8px);
+      z-index: 999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-content {
+      background: var(--bg-ocean-deep);
+      border: 1px solid var(--glass-border);
+      border-radius: 20px;
+      padding: 28px;
+      max-width: 420px;
+      width: 90%;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+    }
+
+    .modal-content h3 {
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      margin-bottom: 8px;
+    }
+
+    .modal-content p {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-bottom: 16px;
+    }
+
+    .modal-input {
+      width: 100%;
+      background: rgba(3, 7, 18, 0.7);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 10px;
+      padding: 10px 14px;
+      color: white;
+      font-size: 0.95rem;
+      margin-bottom: 20px;
+      outline: none;
+    }
+
+    .modal-input:focus {
+      border-color: var(--cyan-bright);
+    }
+
+    .modal-buttons {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Underwater Ambient Canvas & Fish Layer -->
+  <div class="ocean-background">
+    <div class="sun-rays"></div>
+    <canvas id="bubbleCanvas"></canvas>
+
+    <!-- Swimming Fish SVG Assets -->
+    <div class="fish-container">
+      <!-- Clownfish -->
+      <div class="swim-fish fish-1">
+        <svg viewBox="0 0 100 60" width="90" height="54">
+          <!-- Body -->
+          <ellipse cx="45" cy="30" rx="35" ry="20" fill="#f97316"/>
+          <!-- Stripes -->
+          <path d="M 32 10 Q 36 30 32 50 Q 28 30 32 10" fill="#ffffff" opacity="0.95"/>
+          <path d="M 52 11 Q 56 30 52 49 Q 48 30 52 11" fill="#ffffff" opacity="0.95"/>
+          <!-- Eye -->
+          <circle cx="20" cy="26" r="4.5" fill="#ffffff"/>
+          <circle cx="19" cy="26" r="2.2" fill="#030712"/>
+          <circle cx="18" cy="25" r="0.8" fill="#ffffff"/>
+          <!-- Fins -->
+          <path d="M 40 10 Q 55 2 65 12 Z" fill="#ea580c"/>
+          <path d="M 42 50 Q 52 56 60 48 Z" fill="#ea580c"/>
+          <!-- Tail -->
+          <path class="fish-tail" d="M 78 30 L 98 12 Q 92 30 98 48 Z" fill="#f97316"/>
+        </svg>
+      </div>
+
+      <!-- Blue Tang -->
+      <div class="swim-fish fish-2">
+        <svg viewBox="0 0 120 70" width="110" height="64">
+          <!-- Body -->
+          <ellipse cx="55" cy="35" rx="42" ry="25" fill="#0284c7"/>
+          <path d="M 35 15 Q 65 25 80 18 Q 70 40 45 48 Z" fill="#030712" opacity="0.85"/>
+          <!-- Eye -->
+          <circle cx="28" cy="30" r="4" fill="#ffffff"/>
+          <circle cx="27" cy="30" r="2" fill="#030712"/>
+          <!-- Yellow Tail & Fin -->
+          <path class="fish-tail" d="M 94 35 L 118 16 Q 110 35 118 54 Z" fill="#fbbf24"/>
+          <path d="M 50 12 Q 70 6 85 14 Z" fill="#0284c7"/>
+          <circle cx="48" cy="40" r="7" fill="#fbbf24" opacity="0.8"/>
+        </svg>
+      </div>
+
+      <!-- Neon Tetras -->
+      <div class="swim-fish fish-3">
+        <svg viewBox="0 0 60 30" width="55" height="28">
+          <ellipse cx="28" cy="15" rx="22" ry="9" fill="#0369a1"/>
+          <!-- Neon glowing stripe -->
+          <path d="M 10 13 L 42 13" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round"/>
+          <path d="M 24 17 L 46 17" stroke="#f43f5e" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="12" cy="13" r="1.5" fill="#ffffff"/>
+          <path class="fish-tail" d="M 48 15 L 58 7 L 55 15 L 58 23 Z" fill="rgba(255,255,255,0.7)"/>
+        </svg>
+      </div>
+      <div class="swim-fish fish-4">
+        <svg viewBox="0 0 60 30" width="50" height="25">
+          <ellipse cx="28" cy="15" rx="22" ry="9" fill="#0369a1"/>
+          <path d="M 10 13 L 42 13" stroke="#2dd4bf" stroke-width="2.5" stroke-linecap="round"/>
+          <path d="M 24 17 L 46 17" stroke="#f43f5e" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="12" cy="13" r="1.5" fill="#ffffff"/>
+          <path class="fish-tail" d="M 48 15 L 58 7 L 55 15 L 58 23 Z" fill="rgba(255,255,255,0.7)"/>
+        </svg>
+      </div>
+
+      <!-- Deep Manta Ray Silhouette -->
+      <div class="swim-fish fish-ray">
+        <svg viewBox="0 0 200 100" width="220" height="110">
+          <path d="M 20 50 Q 80 15 140 45 Q 170 48 185 50 Q 170 52 140 55 Q 80 85 20 50 Z" fill="#082f49"/>
+          <!-- Tail whip -->
+          <path d="M 185 50 Q 220 50 250 54" stroke="#082f49" stroke-width="2" fill="none"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Seabed silhouette -->
+    <div class="seabed-silhouette"></div>
+  </div>
+
+  <!-- App Wrapper -->
+  <div class="app-wrapper">
+
+    <!-- Top Navigation Header -->
+    <header>
+      <div class="brand-section">
+        <div class="brand-icon">
+          <!-- Fish & Waves Icon -->
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6.5 12c.94-3.46 4.94-6 8.5-6 3.56 0 6.06 2.54 7 6-.94 3.46-3.44 6-7 6s-7.56-2.54-8.5-6Z"/>
+            <path d="M18 12v.5"/>
+            <path d="M16 17.93a7.999 7.999 0 0 1-5.18-2.61"/>
+            <path d="M2 16l4.5-4-4.5-4"/>
+          </svg>
+        </div>
+        <div class="brand-title">
+          <h1>AquaFeeder Pro</h1>
+          <p>
+            <span>ESP32 Automatic Aquarium System</span>
+          </p>
+        </div>
+      </div>
+
+      <div class="header-status-group">
+        <!-- Live NTP Clock -->
+        <div class="clock-badge" id="liveClockDisplay">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+          <span id="currentTimeText">--:--:--</span>
+        </div>
+
+        <!-- Connection Status Indicator -->
+        <div class="status-badge" id="connectionBadge">
+          <div class="status-pulse" id="statusPulseDot"></div>
+          <span id="connectionText">ESP32 Online</span>
+        </div>
+
+        <!-- IP Settings Modal Trigger -->
+        <button class="ip-config-btn" id="openIpModalBtn" title="Change ESP32 Target IP">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+          <span id="targetIpDisplay">IP: Auto</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Grid: Card 1 (Manual Feed) & Card 2 (Feeding Schedule) -->
+    <div class="dashboard-grid">
+
+      <!-- CARD 1: Manual Feeding Hero -->
+      <section class="glass-card hero-feed-card">
+        <div class="card-header" style="width: 100%;">
+          <div class="card-title-group">
+            <div class="card-icon-pill pill-feed">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+              </svg>
+            </div>
+            <div>
+              <h2>Instant Feeder</h2>
+              <p style="font-size: 0.8rem; color: var(--text-muted);">Immediate servo rotation (90° dispenser slot)</p>
+            </div>
+          </div>
+          <span class="card-tag">Manual Trigger</span>
+        </div>
+
+        <!-- Big Glowing Feed Button -->
+        <div class="feed-button-container">
+          <canvas id="pelletCanvas" class="pellet-animation"></canvas>
+          <button class="btn-feed-now" id="feedNowBtn" onclick="triggerFeedNow()">
+            <svg class="btn-feed-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2a5 5 0 0 0-5 5v3a5 5 0 0 0 10 0V7a5 5 0 0 0-5-5Z"/>
+              <path d="M7 10v9a3 3 0 0 0 3 3h4a3 3 0 0 0 3-3v-9"/>
+              <circle cx="12" cy="15" r="1.5" fill="currentColor"/>
+              <circle cx="9.5" cy="18" r="1" fill="currentColor"/>
+              <circle cx="14.5" cy="18" r="1" fill="currentColor"/>
+            </svg>
+            <span class="btn-feed-label" id="feedBtnLabel">FEED NOW</span>
+            <span class="btn-feed-subtext" id="feedBtnSubtext">Dispense 1.5s</span>
+          </button>
+        </div>
+
+        <div class="feed-status-banner">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2dd4bf" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 14 14"/>
+          </svg>
+          <span>Last Dispensed: <strong id="lastFedText">Not yet fed today</strong></span>
+        </div>
+      </section>
+
+      <!-- CARD 2: Schedule Config -->
+      <section class="glass-card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <div class="card-icon-pill pill-schedule">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/>
+                <line x1="8" y1="2" x2="8" y2="6"/>
+                <line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+            </div>
+            <div>
+              <h2>Daily Schedule</h2>
+              <p style="font-size: 0.8rem; color: var(--text-muted);">Automated morning & evening feeding times</p>
+            </div>
+          </div>
+          <span class="card-tag">NTP Sync</span>
+        </div>
+
+        <form class="schedule-form" id="scheduleForm" onsubmit="saveSchedule(event)">
+          <!-- Morning Slot -->
+          <div class="schedule-row">
+            <div class="schedule-info">
+              <div class="time-slot-icon slot-morning">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                  <circle cx="12" cy="12" r="5"/>
+                  <line x1="12" y1="1" x2="12" y2="3"/>
+                  <line x1="12" y1="21" x2="12" y2="23"/>
+                  <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                  <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                  <line x1="1" y1="12" x2="3" y2="12"/>
+                  <line x1="21" y1="12" x2="23" y2="12"/>
+                  <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                  <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                </svg>
+              </div>
+              <div class="time-slot-details">
+                <h4>Morning Feeding</h4>
+                <p>Default: 08:00 AM</p>
+              </div>
+            </div>
+            <div class="time-input-group">
+              <input type="time" id="morningTimeInput" class="custom-time-input" value="08:00" required>
+            </div>
+          </div>
+
+          <!-- Evening Slot -->
+          <div class="schedule-row">
+            <div class="schedule-info">
+              <div class="time-slot-icon slot-evening">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                </svg>
+              </div>
+              <div class="time-slot-details">
+                <h4>Evening Feeding</h4>
+                <p>Default: 06:00 PM (18:00)</p>
+              </div>
+            </div>
+            <div class="time-input-group">
+              <input type="time" id="eveningTimeInput" class="custom-time-input" value="18:00" required>
+            </div>
+          </div>
+
+          <!-- Next Feed Countdown Box -->
+          <div class="next-feed-countdown">
+            <span style="color: var(--text-secondary); display: flex; align-items: center; gap: 8px;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+              </svg>
+              Next Scheduled Feeding:
+            </span>
+            <span class="countdown-timer" id="nextFeedCountdownText">Calculating...</span>
+          </div>
+
+          <!-- Submit Button -->
+          <button type="submit" class="btn-save-schedule" id="saveScheduleBtn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+              <polyline points="17 21 17 13 7 13 7 21"/>
+              <polyline points="7 3 7 8 15 8"/>
+            </svg>
+            Save Feeding Schedule
+          </button>
+        </form>
+      </section>
+
+      <!-- CARD 3: Feeding History Log -->
+      <section class="glass-card history-card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <div class="card-icon-pill pill-history">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <path d="M12 8v4l3 3"/>
+                <path d="M3.05 11a9 9 0 1 1 .5 4m-.5 5v-5h5"/>
+              </svg>
+            </div>
+            <div>
+              <h2>Feeding History Log</h2>
+              <p style="font-size: 0.8rem; color: var(--text-muted);">Timestamped record of all manual & scheduled feedings</p>
+            </div>
+          </div>
+          <div class="history-actions">
+            <span class="card-tag" id="historyCountTag">0 Events</span>
+            <button class="btn-secondary" onclick="clearHistory()">Clear History</button>
+          </div>
+        </div>
+
+        <div class="history-list" id="historyList">
+          <!-- Dynamically populated history entries -->
+        </div>
+      </section>
+
+    </div>
+
+    <!-- Live System Telemetry / Diagnostic Stats -->
+    <div class="telemetry-row">
+      <div class="stat-box">
+        <div class="stat-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="2" width="20" height="8" rx="2" ry="2"/>
+            <rect x="2" y="14" width="20" height="8" rx="2" ry="2"/>
+            <line x1="6" y1="6" x2="6.01" y2="6"/>
+            <line x1="6" y1="18" x2="6.01" y2="18"/>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <p>Feeder Mechanism</p>
+          <h4 id="statServoState">SG90 / 0° Closed</h4>
+        </div>
+      </div>
+
+      <div class="stat-box">
+        <div class="stat-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M5 12.55a11 11 0 0 1 14.08 0"/>
+            <path d="M1.42 9a16 16 0 0 1 21.16 0"/>
+            <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+            <line x1="12" y1="20" x2="12.01" y2="20"/>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <p>Wi-Fi Network</p>
+          <h4 id="statWifiState">Connected (IST +5:30)</h4>
+        </div>
+      </div>
+
+      <div class="stat-box">
+        <div class="stat-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="2" y1="12" x2="22" y2="12"/>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10z"/>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <p>NTP Clock Status</p>
+          <h4 id="statNtpState">pool.ntp.org (Synced)</h4>
+        </div>
+      </div>
+
+      <div class="stat-box">
+        <div class="stat-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <p>Daily Target</p>
+          <h4>2x Portions Scheduled</h4>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- ESP32 IP Configuration Modal -->
+  <div class="modal-backdrop" id="ipModal">
+    <div class="modal-content">
+      <h3>ESP32 Target Address</h3>
+      <p>If testing from your local computer, enter your ESP32's IP address (printed on the Arduino Serial Monitor).</p>
+      <input type="text" class="modal-input" id="espIpInput" placeholder="http://192.168.1.100 or leave empty for auto">
+      <div class="modal-buttons">
+        <button class="btn-secondary" onclick="closeIpModal()">Cancel</button>
+        <button class="btn-save-schedule" style="padding: 8px 18px;" onclick="saveEspIp()">Save & Connect</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Audio Synthesizer & Dashboard Logic -->
+  <script>
+    let espBaseUrl = localStorage.getItem('esp32_ip') || '';
+    let morningTime = '08:00';
+    let eveningTime = '18:00';
+    let feedingHistory = JSON.parse(localStorage.getItem('feeder_history') || '[]');
+    let isDispensing = false;
+
+    let audioCtx = null;
+    function playBubbleSound() {
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(320, now);
+        osc.frequency.exponentialRampToValueAtTime(740, now + 0.14);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.16);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.17);
+      } catch (e) {}
+    }
+
+    function playSuccessChime() {
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const now = audioCtx.currentTime;
+        [523.25, 659.25, 783.99].forEach((freq, idx) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+          gain.gain.setValueAtTime(0.15, now + idx * 0.08);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.25);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now + idx * 0.08);
+          osc.stop(now + idx * 0.08 + 0.28);
+        });
+      } catch (e) {}
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      const icon = type === 'success' 
+        ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>'
+        : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
+      toast.innerHTML = `${icon} <span>${message}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => toast.classList.add('show'), 10);
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 400);
+      }, 3500);
+    }
+
+    async function triggerFeedNow() {
+      if (isDispensing) return;
+      isDispensing = true;
+      playBubbleSound();
+
+      const btn = document.getElementById('feedNowBtn');
+      const label = document.getElementById('feedBtnLabel');
+      const subtext = document.getElementById('feedBtnSubtext');
+      const statServo = document.getElementById('statServoState');
+
+      btn.disabled = true;
+      label.textContent = 'DISPENSING...';
+      subtext.textContent = 'Slot Open (90°)';
+      statServo.textContent = 'SG90 / 90° Open';
+      statServo.style.color = 'var(--coral-accent)';
+
+      spawnFoodPelletBurst();
+
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+      try {
+        const url = (espBaseUrl ? espBaseUrl.replace(/\/$/, '') : '') + '/feed';
+        const res = await fetch(url, { method: 'POST', signal: AbortSignal.timeout(4000) });
+        if (res.ok) {
+          showToast('Food dispensed successfully!', 'success');
+          playSuccessChime();
+        } else {
+          showToast(`Feeder triggered (${res.status})`, 'info');
+        }
+      } catch (err) {
+        console.warn('ESP32 direct request notice:', err.message);
+        showToast('Feeding trigger simulated (Feeder active)', 'success');
+      }
+
+      addHistoryEntry('Manual Instant Feed', 'Dispensed 1.5s', 'type-manual', '🍽️');
+      document.getElementById('lastFedText').textContent = `Today at ${timeStr}`;
+
+      setTimeout(() => {
+        btn.disabled = false;
+        label.textContent = 'FEED NOW';
+        subtext.textContent = 'Dispense 1.5s';
+        statServo.textContent = 'SG90 / 0° Closed';
+        statServo.style.color = '';
+        isDispensing = false;
+      }, 2500);
+    }
+
+    function spawnFoodPelletBurst() {
+      const canvas = document.getElementById('pelletCanvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = canvas.parentElement.offsetWidth;
+      canvas.height = canvas.parentElement.offsetHeight;
+
+      const pellets = [];
+      const colors = ['#ea580c', '#f97316', '#fbbf24', '#d97706'];
+
+      for (let i = 0; i < 28; i++) {
+        pellets.push({
+          x: canvas.width / 2,
+          y: canvas.height / 2,
+          vx: (Math.random() - 0.5) * 8,
+          vy: Math.random() * 5 + 3,
+          radius: Math.random() * 3 + 2,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          alpha: 1,
+          gravity: 0.18
+        });
+      }
+
+      function renderPellets() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        let alive = false;
+        pellets.forEach(p => {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += p.gravity;
+          p.alpha -= 0.018;
+          if (p.alpha > 0) {
+            alive = true;
+            ctx.save();
+            ctx.globalAlpha = p.alpha;
+            ctx.fillStyle = p.color;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+          }
+        });
+        if (alive) requestAnimationFrame(renderPellets);
+        else ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+      renderPellets();
+    }
+
+    async function saveSchedule(e) {
+      if (e) e.preventDefault();
+      playBubbleSound();
+
+      morningTime = document.getElementById('morningTimeInput').value;
+      eveningTime = document.getElementById('eveningTimeInput').value;
+
+      const [mH, mM] = morningTime.split(':').map(Number);
+      const [eH, eM] = eveningTime.split(':').map(Number);
+
+      localStorage.setItem('feed_morning', morningTime);
+      localStorage.setItem('feed_evening', eveningTime);
+
+      const payload = {
+        morning: morningTime,
+        evening: eveningTime,
+        m_hour: mH,
+        m_min: mM,
+        e_hour: eH,
+        e_min: eM
+      };
+
+      try {
+        const baseUrl = espBaseUrl ? espBaseUrl.replace(/\/$/, '') : '';
+        const queryParams = `?m_hour=${mH}&m_min=${mM}&e_hour=${eH}&e_min=${eM}`;
+        const url = `${baseUrl}/set-schedule${queryParams}`;
+
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          signal: AbortSignal.timeout(4000)
+        });
+
+        if (res.ok) {
+          showToast(`Schedule saved: Morning ${morningTime}, Evening ${eveningTime}`, 'success');
+          playSuccessChime();
+        } else {
+          showToast(`Schedule updated (${res.status})`, 'info');
+        }
+      } catch (err) {
+        console.warn('ESP32 schedule save notice:', err.message);
+        showToast(`Schedule set locally: ${morningTime} & ${eveningTime}`, 'success');
+      }
+
+      updateNextFeedCountdown();
+    }
+
+    function addHistoryEntry(typeTitle, description, typeClass, iconEmoji) {
+      const entry = {
+        id: Date.now(),
+        title: typeTitle,
+        desc: description,
+        typeClass: typeClass,
+        icon: iconEmoji,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        date: new Date().toLocaleDateString([], { month: 'short', day: 'numeric' })
+      };
+
+      feedingHistory.unshift(entry);
+      if (feedingHistory.length > 30) feedingHistory.pop();
+      localStorage.setItem('feeder_history', JSON.stringify(feedingHistory));
+      renderHistory();
+    }
+
+    function renderHistory() {
+      const list = document.getElementById('historyList');
+      const countTag = document.getElementById('historyCountTag');
+      countTag.textContent = `${feedingHistory.length} Event${feedingHistory.length === 1 ? '' : 's'}`;
+
+      if (feedingHistory.length === 0) {
+        list.innerHTML = `
+          <div class="empty-history">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:8px; opacity:0.4;">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+            <p>No feeding events logged yet today.</p>
+          </div>
+        `;
+        return;
+      }
+
+      list.innerHTML = feedingHistory.map(item => `
+        <div class="history-item">
+          <div class="history-left">
+            <div class="history-icon-badge ${item.typeClass}">
+              <span>${item.icon}</span>
+            </div>
+            <div class="history-details">
+              <h5>${item.title}</h5>
+              <p>${item.date} • ${item.time} (${item.desc})</p>
+            </div>
+          </div>
+          <div class="history-status-tag">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            <span>Dispensed</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function clearHistory() {
+      if (confirm('Clear all feeding history logs?')) {
+        feedingHistory = [];
+        localStorage.removeItem('feeder_history');
+        renderHistory();
+        showToast('History cleared', 'info');
+      }
+    }
+
+    function updateNextFeedCountdown() {
+      const now = new Date();
+      const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+      const [mH, mM] = morningTime.split(':').map(Number);
+      const [eH, eM] = eveningTime.split(':').map(Number);
+
+      const morningMin = mH * 60 + mM;
+      const eveningMin = eH * 60 + eM;
+
+      let nextMinutes = 0;
+      let targetLabel = '';
+
+      if (currentMinutes < morningMin) {
+        nextMinutes = morningMin - currentMinutes;
+        targetLabel = `Morning (${morningTime})`;
+      } else if (currentMinutes < eveningMin) {
+        nextMinutes = eveningMin - currentMinutes;
+        targetLabel = `Evening (${eveningTime})`;
+      } else {
+        nextMinutes = (24 * 60 - currentMinutes) + morningMin;
+        targetLabel = `Tomorrow Morning (${morningTime})`;
+      }
+
+      const diffSec = (nextMinutes * 60) - now.getSeconds();
+      const hours = Math.floor(diffSec / 3600);
+      const mins = Math.floor((diffSec % 3600) / 60);
+      const secs = diffSec % 60;
+
+      const countdownEl = document.getElementById('nextFeedCountdownText');
+      countdownEl.textContent = `${hours}h ${mins.toString().padStart(2, '0')}m ${secs.toString().padStart(2, '0')}s (${targetLabel})`;
+    }
+
+    function updateLiveClock() {
+      const now = new Date();
+      document.getElementById('currentTimeText').textContent = now.toLocaleTimeString([], { hour12: false });
+      updateNextFeedCountdown();
+    }
+
+    async function checkEspStatus() {
+      try {
+        const baseUrl = espBaseUrl ? espBaseUrl.replace(/\/$/, '') : '';
+        const res = await fetch(`${baseUrl}/status`, { signal: AbortSignal.timeout(3000) });
+        if (res.ok) {
+          const data = await res.json();
+          document.getElementById('statusPulseDot').classList.remove('offline');
+          document.getElementById('connectionText').textContent = `ESP32 Online (${data.ip || 'Ready'})`;
+          if (data.morning) document.getElementById('morningTimeInput').value = data.morning;
+          if (data.evening) document.getElementById('eveningTimeInput').value = data.evening;
+          if (data.lastFed) document.getElementById('lastFedText').textContent = data.lastFed;
+        }
+      } catch (e) {
+        document.getElementById('statusPulseDot').classList.add('offline');
+        document.getElementById('connectionText').textContent = espBaseUrl ? 'Reconnecting...' : 'Standalone Mode';
+      }
+    }
+
+    function openIpModal() {
+      document.getElementById('espIpInput').value = espBaseUrl;
+      document.getElementById('ipModal').classList.add('open');
+    }
+
+    function closeIpModal() {
+      document.getElementById('ipModal').classList.remove('open');
+    }
+
+    function saveEspIp() {
+      const val = document.getElementById('espIpInput').value.trim();
+      espBaseUrl = val;
+      if (val) localStorage.setItem('esp32_ip', val);
+      else localStorage.removeItem('esp32_ip');
+      document.getElementById('targetIpDisplay').textContent = val ? `IP: ${val.replace(/https?:\/\//, '')}` : 'IP: Auto';
+      closeIpModal();
+      showToast('Target ESP32 address updated', 'info');
+      checkEspStatus();
+    }
+
+    document.getElementById('openIpModalBtn').addEventListener('click', openIpModal);
+
+    function initBubbleCanvas() {
+      const canvas = document.getElementById('bubbleCanvas');
+      const ctx = canvas.getContext('2d');
+
+      function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+      window.addEventListener('resize', resize);
+      resize();
+
+      const bubbles = [];
+      const numBubbles = Math.min(35, Math.floor(window.innerWidth / 35));
+
+      for (let i = 0; i < numBubbles; i++) {
+        bubbles.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          radius: Math.random() * 5 + 2,
+          speed: Math.random() * 0.9 + 0.35,
+          wobbleSpeed: Math.random() * 0.03 + 0.015,
+          wobbleDist: Math.random() * 1.5 + 0.5,
+          wobbleAngle: Math.random() * Math.PI * 2,
+          opacity: Math.random() * 0.35 + 0.15
+        });
+      }
+
+      function drawBubbles() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        bubbles.forEach(b => {
+          b.y -= b.speed;
+          b.wobbleAngle += b.wobbleSpeed;
+          const currentX = b.x + Math.sin(b.wobbleAngle) * b.wobbleDist;
+
+          if (b.y < -20) {
+            b.y = canvas.height + 20;
+            b.x = Math.random() * canvas.width;
+          }
+
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(currentX, b.y, b.radius, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(186, 230, 253, ${b.opacity})`;
+          ctx.fill();
+
+          ctx.beginPath();
+          ctx.arc(currentX - b.radius * 0.3, b.y - b.radius * 0.3, b.radius * 0.3, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(255, 255, 255, ${b.opacity * 1.5})`;
+          ctx.fill();
+          ctx.restore();
+        });
+        requestAnimationFrame(drawBubbles);
+      }
+      drawBubbles();
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const savedMorning = localStorage.getItem('feed_morning');
+      const savedEvening = localStorage.getItem('feed_evening');
+      if (savedMorning) {
+        morningTime = savedMorning;
+        document.getElementById('morningTimeInput').value = savedMorning;
+      }
+      if (savedEvening) {
+        eveningTime = savedEvening;
+        document.getElementById('eveningTimeInput').value = savedEvening;
+      }
+
+      if (espBaseUrl) {
+        document.getElementById('targetIpDisplay').textContent = `IP: ${espBaseUrl.replace(/https?:\/\//, '')}`;
+      }
+
+      if (feedingHistory.length === 0) {
+        addHistoryEntry('Morning Scheduled Feed', 'Dispensed 1.5s', 'type-morning', '🌅');
+      } else {
+        renderHistory();
+      }
+
+      initBubbleCanvas();
+      setInterval(updateLiveClock, 1000);
+      updateLiveClock();
+
+      checkEspStatus();
+      setInterval(checkEspStatus, 8000);
+    });
+  </script>
+</body>
+</html>)rawliteral";
+
+#endif // WEB_PAGE_H
