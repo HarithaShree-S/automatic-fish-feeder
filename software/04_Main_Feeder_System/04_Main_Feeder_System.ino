@@ -1,123 +1,105 @@
-/*
- * Project: ESP32 Automatic Fish Feeder
- * Module: 04_Main_Feeder_System
- * Description: Main integrated system with Wi-Fi, NTP time synchronization,
- *              scheduled feeding times, and servo-based dispenser control.
- * Requires: ESP32Servo library
- */
-
 #include <WiFi.h>
-#include <time.h>
 #include <ESP32Servo.h>
+#include "time.h"
+// Wi-Fi credentials loaded from gitignored config.h (see config.example.h)
+#if __has_include("config.h")
+  #include "config.h"
+#else
+  #include "config.example.h"
+#endif
 
-// Wi-Fi Configuration
-const char* ssid     = "YOUR_WIFI_SSID";
-const char* password = "YOUR_WIFI_PASSWORD";
+// Hardware Pin Assignments
+const int SERVO_PIN = 18;
 
-// NTP Server Settings (UTC+5:30 default, adjust as needed)
+// Servo Object
+Servo feederServo;
+
+// NTP Configuration (India Standard Time +5:30 = 19800 seconds)
 const char* ntpServer = "pool.ntp.org";
 const long  gmtOffset_sec = 19800;
 const int   daylightOffset_sec = 0;
 
-// Hardware Pins
-const int SERVO_PIN = 18;
-const int STATUS_LED = 2;
+// =========================================================================
+// SET YOUR TEST TIME HERE (Change these to 1-2 mins ahead of your current time)
+// =========================================================================
+// Production Daily Feeding Schedule (24-Hour Format)
+const int FEED_HOUR_1 = 8;   // Morning: 08:00 AM
+const int FEED_MIN_1  = 0;
 
-// Servo Angles & Timings
-const int SERVO_CLOSED = 0;
-const int SERVO_OPEN = 90;
-const int DISPENSE_DURATION_MS = 1200;
+const int FEED_HOUR_2 = 18;  // Evening: 06:00 PM
+const int FEED_MIN_2  = 0;
 
-// Scheduled Feeding Times (24-hour format: hour, minute)
-struct FeedSchedule {
-  int hour;
-  int minute;
-  bool fedToday;
-};
-
-FeedSchedule schedules[] = {
-  { 8,  0, false }, // Morning feed at 08:00
-  { 13, 0, false }, // Afternoon feed at 13:00
-  { 20, 0, false }  // Evening feed at 20:00
-};
-const int NUM_SCHEDULES = sizeof(schedules) / sizeof(schedules[0]);
-
-Servo feederServo;
-int lastCheckedDay = -1;
+int lastFedMinute = -1; // Prevents duplicate triggers in the same minute
 
 void dispenseFood() {
-  Serial.println("[FEEDER] Triggering food dispensing cycle...");
-  digitalWrite(STATUS_LED, HIGH);
-
-  feederServo.write(SERVO_OPEN);
-  delay(DISPENSE_DURATION_MS);
-
-  feederServo.write(SERVO_CLOSED);
-  delay(300);
-
-  digitalWrite(STATUS_LED, LOW);
-  Serial.println("[FEEDER] Feeding cycle completed.");
-}
-
-void checkSchedules(struct tm* timeinfo) {
-  // Reset daily feeding flags at midnight
-  if (timeinfo->tm_mday != lastCheckedDay) {
-    lastCheckedDay = timeinfo->tm_mday;
-    for (int i = 0; i < NUM_SCHEDULES; i++) {
-      schedules[i].fedToday = false;
-    }
-    Serial.println("[FEEDER] New day started. Daily schedules reset.");
-  }
-
-  for (int i = 0; i < NUM_SCHEDULES; i++) {
-    if (!schedules[i].fedToday &&
-        timeinfo->tm_hour == schedules[i].hour &&
-        timeinfo->tm_min == schedules[i].minute) {
-      Serial.printf("[FEEDER] Feeding schedule match (%02d:%02d)!\n",
-                    schedules[i].hour, schedules[i].minute);
-      dispenseFood();
-      schedules[i].fedToday = true;
-    }
-  }
+  Serial.println("\n[FEEDER ACTION] *** Feeding Time Reached! ***");
+  
+  // Rotate to 90 degrees to open slot
+  feederServo.write(90);
+  delay(1500); // Hold open for 1.5 seconds
+  
+  // Return to 0 degrees to close slot
+  feederServo.write(0);
+  Serial.println("[FEEDER ACTION] Dispensing complete. Closed slot.\n");
 }
 
 void setup() {
   Serial.begin(115200);
-  pinMode(STATUS_LED, OUTPUT);
   delay(1000);
-  Serial.println("[ESP32 Fish Feeder] Starting Main Feeder System...");
+
+  Serial.println("=========================================");
+  Serial.println("   ESP32 AUTOMATIC FISH FEEDER MAIN      ");
+  Serial.println("=========================================");
 
   // Initialize Servo
-  ESP32PWM::allocateTimer(0);
-  feederServo.setPeriodHertz(50);
   feederServo.attach(SERVO_PIN, 500, 2400);
-  feederServo.write(SERVO_CLOSED);
+  feederServo.write(0); // Start in sealed position
 
   // Connect to Wi-Fi
-  Serial.printf("Connecting to Wi-Fi '%s' ", ssid);
-  WiFi.begin(ssid, password);
-  int attempts = 0;
-  while (WiFi.status() != WL_CONNECTED && attempts < 20) {
+  Serial.print("Connecting to Wi-Fi: ");
+  Serial.println(WIFI_SSID);
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+
+  while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
-    attempts++;
   }
+  Serial.println("\n[STATUS] Wi-Fi Connected!");
+  Serial.print("[STATUS] IP Address: ");
+  Serial.println(WiFi.localIP());
 
-  if (WiFi.status() == WL_CONNECTED) {
-    Serial.println("\nWiFi connected. IP: ");
-    Serial.println(WiFi.localIP());
-    configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
-  } else {
-    Serial.println("\nWiFi connection failed! Proceeding in offline mode.");
-  }
+  // Configure NTP
+  configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
 }
 
 void loop() {
   struct tm timeinfo;
-  if (getLocalTime(&timeinfo)) {
-    checkSchedules(&timeinfo);
-  } else {
-    Serial.println("[WARNING] Waiting for NTP time synchronization...");
+  if (!getLocalTime(&timeinfo)) {
+    Serial.println("[ERROR] Failed to obtain NTP time");
+    delay(2000);
+    return;
   }
-  delay(10000); // Check every 10 seconds
+
+  int currentHour   = timeinfo.tm_hour;
+  int currentMinute = timeinfo.tm_min;
+  int currentSecond = timeinfo.tm_sec;
+
+  // Print current status to Serial Monitor
+  Serial.printf("[SYSTEM TIME] %02d:%02d:%02d\n", currentHour, currentMinute, currentSecond);
+
+  // Check feeding schedule
+  bool isFeedingTime1 = (currentHour == FEED_HOUR_1 && currentMinute == FEED_MIN_1);
+  bool isFeedingTime2 = (currentHour == FEED_HOUR_2 && currentMinute == FEED_MIN_2);
+
+  if ((isFeedingTime1 || isFeedingTime2) && lastFedMinute != currentMinute) {
+    dispenseFood();
+    lastFedMinute = currentMinute; // Lock feeding for this minute
+  }
+
+  // Reset lock when out of feeding minute
+  if (!isFeedingTime1 && !isFeedingTime2) {
+    lastFedMinute = -1;
+  }
+
+  delay(5000); // Check every 5 seconds
 }
