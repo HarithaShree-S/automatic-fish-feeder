@@ -33,4 +33,5 @@ void loop() {
   Serial.println("[SERVO] Position: 180 degrees (Full Open)");
   feederServo.write(180);
   delay(2000);
+
 }
